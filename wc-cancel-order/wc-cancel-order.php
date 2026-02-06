@@ -1,19 +1,18 @@
 <?php
 /**
-*Plugin Name: WC Cancel Order
-*Plugin URI: https://wpexpertshub.com
-*Description: Allow customers to send order cancellation request from my account page.
-*Author: WpExperts Hub
-*Version: 3.5
-*Author URI: https://wpexpertshub.com
-*Text Domain: wc-cancel-order
-*Requires Plugins: woocommerce
-*Requires at least: 6.0
-*Tested up to: 6.6
-*Requires PHP: 7.4
-*Stable tag: 3.5
-*WC requires at least: 8.0
-*WC tested up to: 9.3
+* Plugin Name: WC Cancel Order
+* Plugin URI: https://wpexpertshub.com
+* Description: Allow customers to send order cancellation request from my account page.
+* Author: WpExperts Hub
+* Version: 3.5.1
+* Author URI: https://wpexpertshub.com
+* Text Domain: wc-cancel-order
+* License: GPLv3
+* Requires Plugins: woocommerce
+* Requires at least: 6.7
+* Requires PHP: 7.4
+* WC requires at least: 8.0
+* WC tested up to: 10.3
 **/
 
 defined( 'ABSPATH' ) || exit;
