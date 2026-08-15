@@ -33,7 +33,7 @@ if(!class_exists('WC_Cancel_Guest',false)){
 				$post->ping_status = 'closed';
 				$post->comment_count = 0;
 				$post->post_date = current_time('mysql');
-				$post->post_date_gmt = current_time('mysql',1);
+				$post->post_date_gmt = current_time('mysql', true);
 
 
 				$post = (object) array_merge((array)$post,(array)$this->args);

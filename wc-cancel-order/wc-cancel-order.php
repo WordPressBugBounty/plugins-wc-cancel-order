@@ -1,19 +1,21 @@
 <?php
 /**
-* Plugin Name: WC Cancel Order
-* Plugin URI: https://wpexpertshub.com
-* Description: Allow customers to send order cancellation request from my account page.
-* Author: WpExperts Hub
-* Version: 3.5.1
-* Author URI: https://wpexpertshub.com
-* Text Domain: wc-cancel-order
-* License: GPLv3
-* Requires Plugins: woocommerce
-* Requires at least: 6.7
-* Requires PHP: 7.4
-* WC requires at least: 8.0
-* WC tested up to: 10.3
-**/
+ * Plugin Name: WC Cancel Order
+ * Plugin URI: https://wpexpertshub.com
+ * Description: Let customers request order cancellations from the My Account page, with admin approval and email notifications.
+ * Author: WpExperts Hub
+ * Version: 3.6
+ * Author URI: https://wpexpertshub.com
+ * Text Domain: wc-cancel-order
+ * Domain Path: /languages
+ * License: GPLv3
+ * Requires Plugins: woocommerce
+ * Requires at least: 6.7
+ * Tested up to: 7.0
+ * Requires PHP: 8.0
+ * WC requires at least: 8.0
+ * WC tested up to: 11.0
+ **/
 
 defined( 'ABSPATH' ) || exit;
 
@@ -35,7 +37,7 @@ class WC_Cancel_Order{
 			@define('WC_CANCEL_DIR',__DIR__);
 		}
         if(!defined('WC_CANCEL_VERSION')){
-            define('WC_CANCEL_VERSION',3.5);
+            define('WC_CANCEL_VERSION','3.6');
         }
         if(!defined('WC_CANCEL_SC_FOOTER')){
             @define('WC_CANCEL_SC_FOOTER',true);
@@ -103,8 +105,8 @@ class WC_Cancel_Order{
 	}
 
 	function clean_str($str){
-        return sanitize_text_field($str);
-	}
+        return sanitize_text_field( wp_unslash( $str ) );
+    }
 
 	function load_wc_cancel_order(){
 		$this->load_settings();
@@ -113,12 +115,15 @@ class WC_Cancel_Order{
 	}
 
 	function wc_cancel_save_settings(){
+		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'woocommerce-settings' ) ) {
+			return;
+		}
 		if(isset($_POST['wc-cancel'])){
 			$this->settings = array(
-				'req-status' => isset($_POST['wc-cancel']['req-status']) ? $_POST['wc-cancel']['req-status'] : array('wc-pending','wc-processing','wc-on-hold'),
-				'text-required' => isset($_POST['wc-cancel']['text-required']) ? $_POST['wc-cancel']['text-required'] : 0,
-				'confirm-note' => isset($_POST['wc-cancel']['confirm-note']) ? stripslashes_deep($_POST['wc-cancel']['confirm-note']) : '',
-				'guest-cancel' => isset($_POST['wc-cancel']['guest-cancel']) ? $_POST['wc-cancel']['guest-cancel'] : 0,
+				'req-status' => isset($_POST['wc-cancel']['req-status']) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['wc-cancel']['req-status'] ) ) : array('wc-pending','wc-processing','wc-on-hold'),
+				'text-required' => isset($_POST['wc-cancel']['text-required']) ? sanitize_text_field( wp_unslash( $_POST['wc-cancel']['text-required'] ) ) : 0,
+				'confirm-note' => isset($_POST['wc-cancel']['confirm-note']) ? wp_kses_post( wp_unslash( $_POST['wc-cancel']['confirm-note'] ) ) : '',
+				'guest-cancel' => isset($_POST['wc-cancel']['guest-cancel']) ? sanitize_text_field( wp_unslash( $_POST['wc-cancel']['guest-cancel'] ) ) : 0,
 			);
 			update_option('wc_cancel_settings',$this->settings,'no');
 		}
@@ -232,7 +237,7 @@ class WC_Cancel_Order{
 		$init_script = false;
 		$screen = get_current_screen();
 		if(isset($screen->id) && in_array($screen->id,array('woocommerce_page_wc-settings'))){
-			$init_script = isset($_REQUEST['tab']) && $_REQUEST['tab']=='wc_cancel_settings' ? true : false;
+			$init_script = isset( $_REQUEST['tab'] ) && sanitize_key( wp_unslash( $_REQUEST['tab'] ) ) === 'wc_cancel_settings' ? true : false; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		}
 		elseif(isset($screen->id) && in_array($screen->id,array('woocommerce_page_wc_cancel'))){
 			$init_script = true;
@@ -240,9 +245,9 @@ class WC_Cancel_Order{
 			$Admin_Assets->admin_scripts();
 			$Admin_Assets->admin_styles();
 
-			wp_enqueue_script('fancybox',$this->plugin_url().'/assets/js/jquery.fancybox.min.js',array('jquery'),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
-			wp_enqueue_style('fancybox',$this->plugin_url().'/assets/css/jquery.fancybox.min.css',array(),WC_CANCEL_VERSION);
-			wp_register_script('wc-cancel-admin',$this->plugin_url().'/assets/js/admin.js',array('fancybox'),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
+			wp_enqueue_script('wcc-modal',$this->plugin_url().'/assets/js/wcc-modal.js',array(),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
+			wp_enqueue_style('wc-cancel-modal',$this->plugin_url().'/assets/css/modal.css',array(),WC_CANCEL_VERSION);
+			wp_register_script('wc-cancel-admin',$this->plugin_url().'/assets/js/admin.js',array('jquery','wcc-modal'),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
 			$translation_array = array(
 				'wcc_view'         => __('Cancellation Request Detail','wc-cancel-order'),
 				'wcc_approval'     => __('Approve Cancellation Request ?','wc-cancel-order'),
@@ -251,27 +256,27 @@ class WC_Cancel_Order{
 				'wcc_confirm_btn'  => __('Confirm','wc-cancel-order'),
 				'wcc_close'        => __('Close','wc-cancel-order'),
 				'wcc_ajax'         => admin_url( 'admin-ajax.php' ),
-				'wcc_nonce'        => wp_create_nonce('wc-cancel-back'),
+				'wcc_nonce'        => wp_create_nonce('wc-cancel-backend'),
 			);
 			wp_localize_script('wc-cancel-admin','wc_cancel_back',$translation_array);
 			wp_enqueue_script('wc-cancel-admin');
 		}
 
 		if($init_script){
-			wp_enqueue_style('wc_cancel-admin',$this->plugin_url().'/assets/css/admin.css');
+			wp_enqueue_style('wc_cancel-admin',$this->plugin_url().'/assets/css/admin.css',array(),WC_CANCEL_VERSION);
 		}
 	}
 
 	function wc_cancel_front_scripts(){
 
-		wp_register_script('fancybox',$this->plugin_url().'/assets/js/jquery.fancybox.min.js',array('jquery'),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
-		wp_register_style('fancybox',$this->plugin_url().'/assets/css/jquery.fancybox.min.css',array(),WC_CANCEL_VERSION);
+		wp_register_script('wcc-modal',$this->plugin_url().'/assets/js/wcc-modal.js',array(),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
+		wp_register_style('wc-cancel-modal',$this->plugin_url().'/assets/css/modal.css',array(),WC_CANCEL_VERSION);
 		wp_register_style('wc-cancel-style',$this->plugin_url().'/assets/css/front.css',array(),WC_CANCEL_VERSION);
 
-		wp_register_script('wc-cancel-script',$this->plugin_url().'/assets/js/front.js',array('fancybox'),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
+		wp_register_script('wc-cancel-script',$this->plugin_url().'/assets/js/front.js',array('jquery','wcc-modal'),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
 		$translation_array = array(
 			'wcc_text_required'=> $this->settings['text-required'] && $this->settings['text-required']=='1' ? true : false,
-			'wcc_note'         => __($this->settings['confirm-note'],'wc-cancel-order'),
+				'wcc_note'         => $this->settings['confirm-note'],
 			'wcc_head_text'    => __('Request Order Cancellation','wc-cancel-order'),
 			'wcc_order_text'   => __('Order #','wc-cancel-order'),
 			'wcc_additional'   => __('Cancellation details','wc-cancel-order'),
@@ -293,13 +298,16 @@ class WC_Cancel_Order{
 		elseif(is_wc_endpoint_url('view-order')){
 			$init = true;
 		}
+		elseif(is_wc_endpoint_url('order-received')){
+			$init = true;
+		}
 		elseif(is_a($post,'WP_Post') && has_shortcode($post->post_content,'wc_cancel_order_details')){
 			$init = true;
 		}
 		$init = apply_filters('wc_cancel_order_init_script',$init);
 		if($init){
-			wp_enqueue_script('fancybox');
-			wp_enqueue_style('fancybox');
+			wp_enqueue_script('wcc-modal');
+			wp_enqueue_style('wc-cancel-modal');
 			wp_enqueue_style('wc-cancel-style');
 			wp_enqueue_script('wc-cancel-script');
 		}
@@ -310,33 +318,32 @@ class WC_Cancel_Order{
 		if(is_a($order,'WC_Order')){
 			global $wpdb;
 			$id = $order->get_id();
-			$bol = $wpdb->get_var("SELECT is_approved FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=".$id);
+			$bol = $wpdb->get_var($wpdb->prepare("SELECT is_approved FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=%d", $id)); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		}
 		return $bol;
 	}
 
 	function add_req($id,$status=0){
 		global $wpdb;
-		$req_count = $wpdb->get_var("SELECT COUNT(id) as total FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=".$id);
+		$req_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(id) as total FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=%d", $id)); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		if(!$req_count){
-			$wpdb->insert($wpdb->prefix."wc_cancel_orders",
+			$wpdb->insert($wpdb->prefix."wc_cancel_orders", // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				array(
-					'order_id'=>$this->clean_str($id),
+					'order_id'=>(int)$id,
 					'user_id'=>get_current_user_id(),
-					'is_approved'=>$this->clean_str($status),
-					'cancel_request_date'=>current_time('mysql')
+					'is_approved'=>(int)$status,
+					'cancel_request_date'=>current_time('mysql', true)
 				),array('%d','%d','%d','%s')
 			);
 		}
 		else
 		{
-			$wpdb->update($wpdb->prefix."wc_cancel_orders",
+			$wpdb->update($wpdb->prefix."wc_cancel_orders", // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				array(
-					'is_approved'=>$this->clean_str($status),
-					'cancel_request_date'=>current_time('mysql')
+					'is_approved'=>(int)$status,
 				),
-				array('order_id'=>$this->clean_str($id)),
-				array('%d','%s'),
+				array('order_id'=>(int)$id),
+				array('%d'),
 				array('%d')
 			);
 		}
@@ -347,14 +354,7 @@ class WC_Cancel_Order{
 	}
 
 	function wc_cancel_text(){
-		if(function_exists('determine_locale')){
-			$locale = determine_locale();
-		} else {
-			$locale = is_admin() ? get_user_locale() : get_locale();
-		}
-
-		load_textdomain('wc-cancel-order', WC_CANCEL_DIR . '/lang/wc-cancel-order-'.$locale.'.mo');
-		load_plugin_textdomain('wc-cancel-order',false,basename(dirname(__FILE__)).'/lang');
+		// Translations are loaded automatically by WordPress (text domain matches the plugin slug).
 	}
 
 	function register_status(){
@@ -365,6 +365,7 @@ class WC_Cancel_Order{
 				'exclude_from_search' => false,
 				'show_in_admin_all_list' => true,
 				'show_in_admin_status_list' => true,
+				/* translators: %s: number of cancellation requests */
 				'label_count' => _n_noop('Cancel Request <span class="count">(%s)</span>', 'Cancel Request <span class="count">(%s)</span>','wc-cancel-order')
 			)
 		);
@@ -398,22 +399,22 @@ class WC_Cancel_Order{
 	}
 
 	function wc_cancel_request(){
-		$order_id = isset($_REQUEST['order_id']) ? $this->clean_str($_REQUEST['order_id']) : 0;
+		$order_id = isset($_REQUEST['order_id']) ? absint( wp_unslash( $_REQUEST['order_id'] ) ) : 0;
 		if($order_id){
-			if(isset($_REQUEST['_wpnonce']) && wp_verify_nonce($_REQUEST['_wpnonce'],'wc-cancel-request')){
+			if(isset($_REQUEST['_wpnonce']) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ),'wc-cancel-request')){
 				$order = wc_get_order($order_id);
 				if(is_a($order,'WC_Order')){
 					$order_id_by_key = 0;
 					$status_key = $this->get_status_key($order->get_status());
-					$order_key = isset($_REQUEST['order_key']) ? sanitize_key($_REQUEST['order_key']) : '';
+					$order_key = isset($_REQUEST['order_key']) ? sanitize_key( wp_unslash( $_REQUEST['order_key'] ) ) : '';
 					if($order_key!=''){
 						$details = new WC_Cancel_Order_Details($order_key,$this->settings);
 						$order_id_by_key = $details->get_order_id($order_key);
 					}
 
-					if(($this->user_has_role() && $this->check_order_customer($order)) || ($this->user_has_role() && $order_id_by_key==$order_id)){
+					if(!$this->is_declined_in_past($order) && (($this->user_has_role() && $this->check_order_customer($order)) || ($this->user_has_role() && $order_id_by_key==$order_id))){
 						if(isset($_REQUEST['additional_details'])){
-                            $order->update_meta_data('_wc_cancel_additional_txt',$this->clean_str($_REQUEST['additional_details']));
+                            $order->update_meta_data('_wc_cancel_additional_txt',sanitize_textarea_field( wp_unslash( $_REQUEST['additional_details'] ) ));
                             $order->save();
 						}
 						if(is_array($this->settings['req-status']) && in_array($status_key,$this->settings['req-status'])){
@@ -426,7 +427,7 @@ class WC_Cancel_Order{
 			}
 		}
 
-		if(isset($_REQUEST['wcc_ajax']) && $_REQUEST['wcc_ajax']){
+		if ( isset( $_REQUEST['wcc_ajax'] ) && sanitize_text_field( wp_unslash( $_REQUEST['wcc_ajax'] ) ) ) {
             $html='<div class="wc-cancel-notice wxp-col-12"><div class="wcc_sucess">'.__('Cancellation request sent successfully.','wc-cancel-order').'</div></div>';
 			wp_send_json(array('res'=>true,'fragments'=>array('div.wc-cancel-notice'=>$html)));
 		}
@@ -448,29 +449,29 @@ class WC_Cancel_Order{
 			wp_die( -1 );
 		}
 		$is_ajax = isset($_REQUEST['wcc_ajax']) ? true : false;
-		if(isset($_REQUEST['_wpnonce']) && wp_verify_nonce($_REQUEST['_wpnonce'],'wc-cancel-backend')){
-			$order_id = isset($_REQUEST['order_id']) ? $this->clean_str($_REQUEST['order_id']) : 0;
+		if(isset($_REQUEST['_wpnonce']) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ),'wc-cancel-backend')){
+			$order_id = isset($_REQUEST['order_id']) ? absint( wp_unslash( $_REQUEST['order_id'] ) ) : 0;
             $order = wc_get_order($order_id);
 			if($order_id && is_a($order,'WC_Order')){
 				$format = get_option('date_format').' '.get_option('time_format');
 				if(isset($_REQUEST['req']) && $_REQUEST['req']=='view'){
 					global $wpdb;
-					$date = $wpdb->get_var("SELECT cancel_request_date FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=".$order_id);
+					$date = $wpdb->get_var($wpdb->prepare("SELECT cancel_request_date FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=%d", $order_id)); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $additional_txt = $order->get_meta('_wc_cancel_additional_txt');
                     $additional_txt = trim($additional_txt)=='' ? '--' : $additional_txt;
 					$html= '<p class="wc-cancel-meta"><label>'.__('Cancellation details :','wc-cancel-order').'</label>'.$additional_txt.'</p>';
-					$html.= '<p class="wc-cancel-meta"><label>'.__('Date:','wc-cancel-order').'</label>'.date_i18n($format,strtotime($date)).'</p>';
+					$html.= '<p class="wc-cancel-meta"><label>'.__('Request Date:','wc-cancel-order').'</label>'.(!empty($date)?get_date_from_gmt($date, $format):'').'</p>';
 					$meta = $order->get_meta('_wc_cancel_request_data');;
 					if(isset($meta['approved']) && $meta['approved']){
 						$html.= '<p class="wc-cancel-meta wc-cancel-approved">';
 						$html.= '<span class="wc-cancel-approved-icon">'.$meta['head'].'</span>';
-						$html.= '<span><label>'.__('Date:','wc-cancel-order').'</label>'.date_i18n($format,strtotime($meta['date'])).'</span>';
+						$html.= '<span><label>'.__('Approved Date:','wc-cancel-order').'</label>'.(!empty($meta['date'])?get_date_from_gmt($meta['date'], $format):'').'</span>';
 						$html.= '</p>';
 					}
 					elseif(isset($meta['approved']) && !$meta['approved']){
 						$html.= '<p class="wc-cancel-meta wc-cancel-declined">';
 						$html.= '<span class="wc-cancel-declined-icon">'.$meta['head'].'</span>';
-						$html.= '<span><label>'.__('Date:','wc-cancel-order').'</label>'.date_i18n($format,strtotime($meta['date'])).'</span>';
+						$html.= '<span><label>'.__('Declined Date:','wc-cancel-order').'</label>'.(!empty($meta['date'])?get_date_from_gmt($meta['date'], $format):'').'</span>';
 						$html.= '</p>';
 					}
 					$res = array('reload'=>false,'html'=>$html);
@@ -479,7 +480,7 @@ class WC_Cancel_Order{
 					if($order->get_status()=='cancel-request'){
 						$this->add_req($order_id,1);
 						$order->update_status('cancelled',__('Cancellation Request Approved.','wc-cancel-order'));
-                        $order->update_meta_data('_wc_cancel_request_data',array('approved'=>true,'head'=>__('Cancellation Request Approved.','wc-cancel-order'),'date'=>current_time('mysql')));
+                        $order->update_meta_data('_wc_cancel_request_data',array('approved'=>true,'head'=>__('Cancellation Request Approved.','wc-cancel-order'),'date'=>current_time('mysql', true)));
                         $order->save();
                         $res = array('reload'=>true,'html'=>'');
 					}
@@ -489,7 +490,7 @@ class WC_Cancel_Order{
 					if(is_a($order,'WC_Order') && $order->get_status()=='cancel-request'){
 						$this->add_req($order_id,2);
 						$order->update_status('processing',__('Cancellation Request Declined.','wc-cancel-order'));
-                        $order->update_meta_data('_wc_cancel_request_data',array('approved'=>false,'head'=>__('Cancellation Request Declined.','wc-cancel-order'),'date'=>current_time('mysql')));
+                        $order->update_meta_data('_wc_cancel_request_data',array('approved'=>false,'head'=>__('Cancellation Request Declined.','wc-cancel-order'),'date'=>current_time('mysql', true)));
                         $order->save();
                         $res = array('reload'=>true,'html'=>'');
 					}
@@ -499,7 +500,7 @@ class WC_Cancel_Order{
 		if($is_ajax){
 			wp_send_json($res);
 		}
-		wp_redirect(admin_url('admin.php?page=wc_cancel'));
+		wp_safe_redirect(admin_url('admin.php?page=wc_cancel'));
 		exit;
 	}
 
@@ -520,10 +521,10 @@ class WC_Cancel_Order{
 	function add_cancellation_reason($order,$sent_to_admin,$plain_text,$email){
 		$additional_txt = $order->get_meta('_wc_cancel_additional_txt');
 		if($plain_text && $additional_txt!=''){
-			echo "\n".__('Cancellation Details:','wc-cancel-order').' '.$additional_txt."\n\n";
+			echo "\n".esc_html__('Cancellation Details:','wc-cancel-order').' '.esc_html($additional_txt)."\n\n";
 		}
 		elseif($additional_txt!=''){
-			$reason_textt = '<strong>'.__('Cancellation Details:','wc-cancel-order').'</strong> '.$additional_txt;
+			$reason_textt = '<strong>'.esc_html__('Cancellation Details:','wc-cancel-order').'</strong> '.esc_html($additional_txt);
 			echo wp_kses_post(wpautop(wptexturize($reason_textt)));
 		}
 	}
@@ -549,7 +550,7 @@ class WC_Cancel_Order{
 	function wc_cancel_key($order_id,$data){
         $order = wc_get_order($order_id);
         if(is_a($order,'WC_Order')){
-            $hash = wp_hash($order_id.'-wc-cancel-order'.current_time('timestamp',0));
+            $hash = wp_hash($order_id.'-wc-cancel-order'.current_time('timestamp'));
             $order->update_meta_data('_wc_cancel_key',$hash);
             $order->save();
         }
@@ -561,6 +562,7 @@ class WC_Cancel_Order{
 
 	function guest_cancel_page($posts){
 		global $wp,$wp_query;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if(isset($wp->request) && $wp->request=='guest-cancel-req'){
 			$args = array(
 				'slug' => 'guest-cancel-req',
@@ -574,17 +576,19 @@ class WC_Cancel_Order{
 	}
 
 	function wc_cancel_order_details(){
-		if(isset($_GET['key']) && $_GET['key']!=''){
-			$details = new WC_Cancel_Order_Details(sanitize_key($_GET['key']),$this->settings);
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$wc_cancel_key = isset( $_GET['key'] ) ? sanitize_key( wp_unslash( $_GET['key'] ) ) : '';
+		if ( '' !== $wc_cancel_key ) {
+			$details = new WC_Cancel_Order_Details( $wc_cancel_key, $this->settings );
 			$details->order_details();
 		}
 	}
 
 	function add_cancel_link($order,$sent_to_admin=false,$plain_text=false){
 		if(is_a($order,'WC_Order') && !$sent_to_admin && isset($this->settings['guest-cancel']) && $this->settings['guest-cancel'] && !$this->is_declined_in_past($order) && $order->get_status()!='completed'){
-			echo '<p><h4>'.__('Want to cancel this order?','wc-cancel-order').'</h4></p>';
+			echo '<p><h4>'.esc_html__('Want to cancel this order?','wc-cancel-order').'</h4></p>';
             $key = $order->get_meta('_wc_cancel_key');
-			echo '<p><a href="'.get_home_url(get_current_blog_id(),'/guest-cancel-req/?key='.$key).'">'.__('Cancel Order','wc-cancel-order').'</a></p>';
+			echo '<p><a href="'.esc_url( get_home_url( get_current_blog_id(), '/guest-cancel-req/?key='.$key ) ).'">'.esc_html__('Cancel Order','wc-cancel-order').'</a></p>';
 		}
 	}
 }
@@ -604,13 +608,17 @@ if(function_exists('is_multisite') && is_multisite()){
             WC_Cancel_Order_Init();
         }
     }
+    // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
     elseif (in_array('woocommerce/woocommerce.php',apply_filters('active_plugins',get_option('active_plugins')))) {
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
         if(!in_array('wc-cancel-order-pro/wc-cancel-order-pro.php',apply_filters('active_plugins',get_option('active_plugins')))){
             WC_Cancel_Order_Init();
         }
     }
 }
+// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 elseif(in_array('woocommerce/woocommerce.php',apply_filters('active_plugins',get_option('active_plugins')))){
+    // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
     if(!in_array('wc-cancel-order-pro/wc-cancel-order-pro.php',apply_filters('active_plugins',get_option('active_plugins')))){
         WC_Cancel_Order_Init();
     }

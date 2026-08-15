@@ -11,32 +11,62 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 			array(
 				'singular'=>'order',
 				'plural' => 'orders',
-				'ajax' => true
+				'ajax' => false
 		));
 	}
 
 	function get_data($per_page,$offset=0){
+		global $wpdb;
 		if(OrderUtil::custom_orders_table_usage_is_enabled()){
-			global $wpdb;
-			$requests = $wpdb->get_results($wpdb->prepare("SELECT w.* FROM ".$wpdb->prefix."wc_cancel_orders as w,".$wpdb->prefix."wc_orders as s WHERE s.id=w.order_id AND s.type=%s ORDER BY w.id DESC LIMIT %d,%d",'shop_order',$offset,$per_page),ARRAY_A);
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$requests = $wpdb->get_results($wpdb->prepare(
+				"SELECT s.id as order_id, COALESCE(w.id,0) as id, COALESCE(w.user_id,0) as user_id, COALESCE(w.is_approved,0) as is_approved, COALESCE(w.cancel_request_date, s.date_created_gmt) as cancel_request_date
+				FROM ".$wpdb->prefix."wc_orders as s
+				LEFT JOIN ".$wpdb->prefix."wc_cancel_orders as w ON w.order_id = s.id
+				WHERE s.type=%s AND (s.status='wc-cancel-request' OR w.order_id IS NOT NULL)
+				ORDER BY COALESCE(w.id, s.id) DESC LIMIT %d,%d",
+				'shop_order',$offset,$per_page
+			),ARRAY_A);
 		}
 		else
 		{
-			global $wpdb;
-			$requests = $wpdb->get_results($wpdb->prepare("SELECT w.* FROM ".$wpdb->prefix."wc_cancel_orders as w,".$wpdb->posts." as s WHERE s.ID=w.order_id AND s.post_type=%s ORDER BY w.id DESC LIMIT %d,%d",'shop_order',$offset,$per_page),ARRAY_A);
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$requests = $wpdb->get_results($wpdb->prepare(
+				"SELECT s.ID as order_id, COALESCE(w.id,0) as id, COALESCE(w.user_id,0) as user_id, COALESCE(w.is_approved,0) as is_approved, COALESCE(w.cancel_request_date, s.post_date) as cancel_request_date
+				FROM ".$wpdb->posts." as s
+				LEFT JOIN ".$wpdb->prefix."wc_cancel_orders as w ON w.order_id = s.ID
+				WHERE s.post_type=%s AND (s.post_status='wc-cancel-request' OR w.order_id IS NOT NULL)
+				ORDER BY COALESCE(w.id, s.ID) DESC LIMIT %d,%d",
+				'shop_order',$offset,$per_page
+			),ARRAY_A);
 		}
 		return $requests;
 	}
 
 	function get_total_count(){
+		global $wpdb;
 		if(OrderUtil::custom_orders_table_usage_is_enabled()){
-			global $wpdb;
-			$count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(w.id) as item_count FROM ".$wpdb->prefix."wc_cancel_orders as w,".$wpdb->prefix."wc_orders as s WHERE s.id=w.order_id AND s.type=%s",'shop_order'));
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$count = $wpdb->get_var($wpdb->prepare(
+				"SELECT COUNT(*) FROM (
+					SELECT s.id FROM ".$wpdb->prefix."wc_orders as s
+					LEFT JOIN ".$wpdb->prefix."wc_cancel_orders as w ON w.order_id = s.id
+					WHERE s.type=%s AND (s.status='wc-cancel-request' OR w.order_id IS NOT NULL)
+				) as t",
+				'shop_order'
+			));
 		}
 		else
 		{
-			global $wpdb;
-			$count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(w.id) as item_count FROM ".$wpdb->prefix."wc_cancel_orders as w,".$wpdb->posts." as s WHERE s.ID=w.order_id AND s.post_type=%s",'shop_order'));
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$count = $wpdb->get_var($wpdb->prepare(
+				"SELECT COUNT(*) FROM (
+					SELECT s.ID FROM ".$wpdb->posts." as s
+					LEFT JOIN ".$wpdb->prefix."wc_cancel_orders as w ON w.order_id = s.ID
+					WHERE s.post_type=%s AND (s.post_status='wc-cancel-request' OR w.order_id IS NOT NULL)
+				) as t",
+				'shop_order'
+			));
 		}
 		return $count;
 	}
@@ -85,30 +115,23 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 
 				break;
 
-            case 'req_status':
-	            if($item['is_approved']==1){
-		            echo '<a data-tip="'.__('Approved','wc-cancel-order').'" class="tips wc-cancel-approve-req wc-cancel-req-approved" role="button">'.__('Approved','wc-cancel-order').'</a>';
-	            }
-                elseif($item['is_approved']==2){
-		            echo '<a data-tip="'.__('Declined','wc-cancel-order').'" class="tips wc-cancel-decline-req wc-cancel-req-declined" role="button">'.__('Declined','wc-cancel-order').'</a>';
-	            }
-
+            case 'request_status':
+	            echo wp_kses_post( $this->full_status_badge($item['is_approved']) );
                 break;
 			case 'cancel_request_date' :
 
-				global $wpdb;
-				$date = $wpdb->get_var("SELECT cancel_request_date FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=".$the_order->get_id());
-				$req_timestamp = strtotime($date);
+				$date = isset($item['cancel_request_date']) ? $item['cancel_request_date'] : '';
+				$req_timestamp = strtotime($date . ' UTC');
 
 				// Check if the order was created within the last 24 hours, and not in the future.
-				if ( $req_timestamp > strtotime( '-1 day', current_time( 'timestamp', true ) ) && $req_timestamp <= current_time( 'timestamp', true ) ) {
+				if ( $req_timestamp && $req_timestamp > strtotime( '-1 day', current_time( 'timestamp', true ) ) && $req_timestamp <= current_time( 'timestamp', true ) ) {
 					$show_date = sprintf(
 					/* translators: %s: human-readable time difference */
 						_x( '%s ago', '%s = human-readable time difference','wc-cancel-order'),
 						human_time_diff($req_timestamp, current_time( 'timestamp', true ) )
 					);
 				} else {
-					$show_date = date_i18n(get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),$req_timestamp);
+					$show_date = $req_timestamp ? wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $req_timestamp ) : '—';
 				}
 				printf(
 					'<time>%1$s</time>',
@@ -117,7 +140,7 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 
 				break;
 			case 'order_total' :
-				echo $the_order->get_formatted_order_total();
+				echo wp_kses_post( $the_order->get_formatted_order_total() );
 				break;
 			case 'order_title' :
 
@@ -163,16 +186,26 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 		}
 
 	}
-	function column_cb($item){
-		return sprintf('<input type="checkbox" name="%1$s[]" value="%2$s" />', $this->_args['singular'], $item['order_id']);
+	function full_status_badge($is_approved){
+		$is_approved = (int)$is_approved;
+		if($is_approved === 1){
+			$label = __('Approved','wc-cancel-order');
+			$cls   = 'approved';
+		} elseif($is_approved === 2){
+			$label = __('Declined','wc-cancel-order');
+			$cls   = 'declined';
+		} else {
+			$label = __('Pending','wc-cancel-order');
+			$cls   = 'pending';
+		}
+		return '<mark class="wc-cancel-partial-status ' . esc_attr($cls) . '">' . esc_html($label) . '</mark>';
 	}
 	function get_columns(){
 		$columns = array();
-		$columns['cb'] = '<input type="checkbox" />';
 		$columns['order_title'] = __('Order', 'wc-cancel-order');
 		$columns['cancel_request_date'] = __('Date', 'wc-cancel-order');
 		$columns['order_status'] = __('Status', 'wc-cancel-order');
-		$columns['req_status'] =   '';
+		$columns['request_status'] = __('Request Status', 'wc-cancel-order');
 		$columns['order_total'] = __('Total', 'wc-cancel-order');
 		$columns['order_actions'] = __('Actions', 'wc-cancel-order');
 		return $columns;
@@ -181,67 +214,7 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 		return array();
 	}
 	function get_bulk_actions(){
-		$actions = array(
-			'approve' => __('Approve Request','wc-cancel-order'),
-			'decline' => __('Decline Request','wc-cancel-order')
-		);
-		return $actions;
-	}
-	function process_bulk_action(){
-		if('approve' === $this->current_action() && isset($_POST['action']) && $_POST['action']=='approve'){
-			$this->approve_requests();
-		}
-		elseif('decline' === $this->current_action() && isset($_POST['action']) && $_POST['action']=='decline'){
-			$this->decline_requests();
-		}
-	}
-	function approve_requests(){
-		$count = 0;
-		if(isset($_POST['order'])){
-			$size = count($_POST['order']);
-			if($size){
-				for($i = 0; $i < $size; $i++){
-					$id = $_POST['order'][$i];
-					$order = wc_get_order($id);
-					if(is_a($order,'WC_Order') && $order->get_status()=='cancel-request'){
-						$order->update_status('cancelled',__('Cancellation Request Approved.','wc-cancel-order'));
-                        $order->update_meta_data('_wc_cancel_request_data',array('approved'=>true,'head'=>__('Cancellation Request Approved.','wc-cancel-order'),'date'=>current_time('mysql')));
-                        $order->save();
-                        //update_post_meta($order->get_id(),'_wc_cancel_request_data',array('approved'=>true,'head'=>__('Cancellation Request Approved.','wc-cancel-order'),'date'=>current_time('mysql')));
-						$count++;
-					}
-				}
-			}
-		}
-		if($count){
-			$this->wc_cancel_admin_notice($count.' '.__('Cancellation Request Approved.','wc-cancel-order'));
-		}
-
-	}
-	function decline_requests(){
-	    $count = 0;
-		if(isset($_POST['order'])){
-			$size = count($_POST['order']);
-			if($size){
-				for($i = 0; $i < $size; $i++){
-					$id = $_POST['order'][$i];
-					$order = wc_get_order($id);
-					if(is_a($order,'WC_Order') && $order->get_status()=='cancel-request'){
-						$order->update_status('processing',__('Cancellation Request Declined.','wc-cancel-order'));
-                        $order->update_meta_data('_wc_cancel_request_data',array('approved'=>false,'head'=>__('Cancellation Request Declined.','wc-cancel-order'),'date'=>current_time('mysql')));
-                        //update_post_meta($order->get_id(),'_wc_cancel_request_data',array('approved'=>false,'head'=>__('Cancellation Request Declined.','wc-cancel-order'),'date'=>current_time('mysql')));
-						$order->save();
-                        $count++;
-					}
-				}
-			}
-		}
-		if($count){
-			$this->wc_cancel_admin_notice($count.' '.__('Cancellation Request Declined.','wc-cancel-order'));
-		}
-	}
-	function wc_cancel_admin_notice($msg){
-	    echo '<div class="notice notice-success is-dismissible"><p>'.$msg.'</p></div>';
+		return array();
 	}
 	function prepare_items(){
 		$per_page = 20;
@@ -249,7 +222,6 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 		$hidden = array();
 		$sortable = $this->get_sortable_columns();
 		$this->_column_headers = array($columns, $hidden, $sortable);
-		$this->process_bulk_action();
 		$current_page = $this->get_pagenum();
 		$offset = $current_page>0 ? (($current_page-1)*$per_page) : 0;
 		$data = $this->get_data($per_page,$offset);
@@ -264,7 +236,7 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 		);
 	}
 	function no_items(){
-		echo __('No Request Found.','wc-cancel-order');
+		echo esc_html__('No Cancellation Request Found.','wc-cancel-order');
 	}
 
 }

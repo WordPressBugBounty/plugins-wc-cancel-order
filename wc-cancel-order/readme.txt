@@ -1,53 +1,63 @@
 === WC Cancel Order ===
 
 Contributors: wpexpertshub, jodhavishalsingh
-Tags: woocommerce cancel order, woocommerce cancel order, cancel order
+Tags: woocommerce cancel order, cancel order, order cancellation
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=jodhavishalsingh@gmail.com&item_name=Donation For Wc Cancel Order
 Requires at least: 6.7
-Tested up to: 6.8.1
-Requires PHP: 7.4
+Tested up to: 7.0
+Requires PHP: 8.0
 WC requires at least: 8.0
-WC tested up to: 10.3
-Stable tag: 3.5.1
+WC tested up to: 11.0
+Stable tag: 3.6
 
-Add order cancellation request functionality to your woocommerce powered store. 
+Let customers request order cancellations from the My Account page, with admin approval and email notifications.
 
 == Description ==
 
-"Wc Cancel Order" helps you to manage order cancellation functionality in a WooCommerce-based online store. Customers can request order cancellation with some details from the "My Account" order page. Store admins will receive a cancellation request for the order and will be able to respond in the "WC Cancel" area.
+WC Cancel Order lets your customers request order cancellations from their WooCommerce "My Account" order page. Store admins receive each request and can approve or decline it from the WC Cancel area, and both the customer and the store are notified by email.
+
+From the settings you can limit requests to specific order statuses, optionally require customers to enter cancellation details, show a custom note inside the cancellation popup, and allow guest customers to cancel using the unique link sent in their order email.
+
+The Pro version adds partial (item-level) cancellation, a store wallet with refund credits, a cancellation fee, configurable refund methods, user-role and Ultimate Member / WooCommerce Subscriptions support, and more.
 
 = Basic Features =
 
-🔹 Customers can send order cancellation requests to the admin with cancellation details.
-🔹 The admin will receive an email notification for the request sent by the customer.
-🔹 Admin can respond to cancellation requests received in WC Cancel Area.
-🔹 The customer will receive an email notification if the cancellation request is approved or declined.
-🔹 Allow guest users to send cancellation request by unique link they receive in order email.
-🔹 Allow cancellation request only when order have specific order status.
-🔹 Choose whether to make the cancellation reason input required or optional.
-🔹 Display the customer note in the cancellation request popup.
+🔹 Customers can send order cancellation requests from the My Account order page with cancellation details.
+🔹 The store admin receives an email notification whenever a customer submits a request.
+🔹 Admins can approve or decline requests from the WC Cancel area.
+🔹 The customer is notified by email when their request is approved or declined.
+🔹 Guest (non-registered) customers can cancel using the unique link sent in their order email.
+🔹 Limit cancellation requests to specific order statuses of your choice.
+🔹 Optionally require customers to enter cancellation details before submitting a request.
+🔹 Display the customer's cancellation details inside the request popup.
 🔹 Translation ready.
-
-
 
 ➡ <strong>[GET PREMIUM VERSION NOW!](https://wpexpertshub.com/plugins/wc-cancel-order-pro/)</strong>
 
 = Premium Features =
 
-&#9989; Allow the option for cancellation requests and direct cancellations with a specific order status.
-&#9989; Automatically assign a specific order status when the cancellation request is approved.
-&#9989; Automatically assign a specific order status when the cancellation request is declined.
+&#9989; Partial order cancellation — request cancellation of specific items/quantities, not just the whole order.
+&#9989; Store wallet — when you approve a cancellation you can credit the refunded amount to the customer's wallet instead of refunding the gateway; customers then spend that balance at checkout via the wallet payment gateway.
+&#9989; Wallet dashboard for admins (WooCommerce → WC Cancel → Wallet) — view every customer's available balance, total received, and total spent at a glance, and drill into any customer to see their per-order wallet credits and debits.
+&#9989; Cancellation fee — charge the customer a fixed amount or a percentage of the order total when a cancellation is approved. The fee is shown to the customer in the cancellation popup before they confirm, then automatically deducted from the refund on approval (it also appears in the admin popup, order notes, customer email, and the Cancellation Requests dashboard).
+&#9989; Refund methods on approval — Automatic gateway refund, Manual refund, or Wallet credit (full & partial), with transaction IDs recorded.
+&#9989; Automatic inventory restock when a refund is issued.
+&#9989; Allow both cancellation requests and direct (immediate) cancellations for specific order statuses.
+&#9989; Auto-assign a specific order status when a request is approved or declined.
 &#9989; Enable cancellation requests for specific user roles.
-&#9989; Allow the admin to define cancellation reason options and display them as radio buttons in the cancellation request popup.
-&#9989; Choose whether to make the cancellation reason radio button required or optional, or to disable the cancellation reason radio buttons completely from the admin settings.
-&#9989; Display an additional text input when a specific cancellation reason radio button is selected, or display it for all options.
-&#9989; Choose whether to make the additional text input required or optional, or to disable it completely from the admin settings.
-&#9989; Hide the cancellation request button after a certain period of time following the order (with options for minutes, hours, days, months, and years).
-&#9989; Supports Ultimate Member - WooCommerce plugin.
-&#9989; Supports the WooCommerce Subscriptions plugin, allowing customers to send cancellation requests for their active subscriptions.
-&#9989; Pro Support.
+&#9989; Admin-defined cancellation reason options shown as radio buttons in the popup.
+&#9989; Make the reason radios and/or an additional text field required, optional, or disabled.
+&#9989; Hide the cancellation request button after a configurable period (minutes, hours, days, months, years).
+&#9989; Unified "Cancel Request" button offering a full or partial choice when both are available.
+&#9989; Merged Cancellation Requests dashboard listing both full and partial requests, with bulk actions.
+&#9989; Email notifications for the admin and customer on request received, approved, and declined, plus wallet-credit receipts.
+&#9989; Supports Ultimate Member and WooCommerce Subscriptions.
+&#9989; Translation ready.
+&#9989; Pro support.
+
+[youtube https://youtu.be/Mg91R_JCGEY]
 
 == Installation ==
 
@@ -56,7 +66,7 @@ Add order cancellation request functionality to your woocommerce powered store.
 + After the installation is complete click "Activate" link (Plugins > Installed Plugins).
 + Configure the desired settings under WooCommerce Settings > WC Cancel tab.
 + You are done.
-+ Check Woocommerce > Wc Cancel for cancellation requests you received.
++ Check WooCommerce > WC Cancel for cancellation requests you received.
 
 == Frequently Asked Questions ==
 
@@ -66,8 +76,23 @@ If you get stuck, you can ask for help in the [Plugin Forum](https://wordpress.o
 = Where can I get support for premium version ? =
 You can write us directly for premium version help or [Contact us](https://wooexperts.com/contact-us/), please do not post on wordpress support forum for premium version help.
 
+== Screenshots ==
+
+1. Admin Orders List Page
+2. Cancellation Requests Page
+3. Approve Cancellation Request Popup
+4. Approved Cancellation Request Popup
+5. Declined Cancellation Request Popup
+6. Customer Orders List Page
+7. Cancellation Request Popup on the Customer Orders List Page
+8. Wc Cancel Order Plugin Settings
+9. Wc Cancel Order Emails
 
 == Changelog ==
+
+= 3.6 - 15/08/2026 =
+* Fix - Cancellation request dates now display in the site's configured timezone (timestamps stored as GMT and rendered via WordPress date functions).
+* Tweak - Plugin Check compliance: added nonce verification, sanitized and escaped input/output, prepared database queries, and documented schema changes.
 
 = 3.5.1 - 30/10/2025 =
 * Fix - Compatibility check and tweaks.
@@ -134,22 +159,22 @@ You can write us directly for premium version help or [Contact us](https://wooex
 
 = 2.8 - 04/01/2019 =
 * Fix - Email template issue fixed.
-* Fix - Woocommrce 3.5 emails compatibility issue fixed.
+* Fix - WooCommerce 3.5 emails compatibility issue fixed.
 
 = 2.7 - 17/12/2018 =
-* Fix - Woocommrce 3.5 compatibility issue fixed.
+* Fix - WooCommerce 3.5 compatibility issue fixed.
 
 = 2.6 - 18/03/2018 =
-* Fix - Woocommrce 3.3 compatibility issue fixed.
+* Fix - WooCommerce 3.3 compatibility issue fixed.
 
 = 2.5 - 07/12/2017 =
 * Fix - Restore product inventory/stock when cancel request accepted.
 
 = 2.4 - 01/06/2017 =
-* Fix - Woocommrce compatibility issue fixed.
+* Fix - WooCommerce compatibility issue fixed.
 
 = 2.3 - 04/05/2017 =
-* Fix - Woocommrce compatibility issue fixed.
+* Fix - WooCommerce compatibility issue fixed.
 
 = 2.2 - 26/04/2017 =
 * Fix - Translation string added.
@@ -159,14 +184,14 @@ You can write us directly for premium version help or [Contact us](https://wooex
 
 = 2.0 - 25/02/2017 =
 * Fix - Email issue fixed.
-* Fix - Woocommrce compatibility issue fixed.
+* Fix - WooCommerce compatibility issue fixed.
 * Tweak - Admin style/scripts.
 
 = 1.9 - 17/05/2016 =
 * Fix - Shop Manager role availability fixed.
 
 = 1.8 - 25/02/2016 =
-* Fix - Woocommrce version compatibility.
+* Fix - WooCommerce version compatibility.
 
 = 1.7 - 12/02/2016 =
 * Feature - Multilingual ready / Translation ready.

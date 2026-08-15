@@ -61,9 +61,9 @@ if(!class_exists('WC_Cancel_Settings')){
 			//echo '<pre>'; print_r(array_keys($statuses)); echo '</pre>';
 			$settings = array(
 				'section_title' => array(
-					'name'     => __('Wc Cancel Order Setting','wc-cancel-order'),
+					'name'     => __('WC Cancel Order Settings','wc-cancel-order'),
 					'type'     => 'title',
-					'desc'     => '',
+					'desc'     => __('Control when and how customers can request order cancellations from their account and order emails.','wc-cancel-order'),
 					'id'       => 'wc_cancel_settings_section_title'
 				),
 				'wc_cancel_order_setting' => array(

@@ -1,14 +1,6 @@
 .wc-cancel-main{
     max-width:600px;
 }
-.wc-cancel-main .wc-cancel-head{
-    font-size: 30px;
-    font-weight: 300;
-}
-.wc-cancel-main .wc-cancel-order-num{
-    font-weight: 600;
-    font-size: 16px;
-}
 .wc-cancel-main .wc-cancel-note{
     padding: 6px 0;
     font-size: 18px;
@@ -57,12 +49,6 @@
 .wc-cancel-main .wcc-load{
     margin: 0;
     text-align: center;
-}
-.wc-cancel-main .wcc-load .fancybox-loading{
-    top: unset;
-    margin-top:0;
-    height: 26px;
-    width: 26px;
 }
 .wc-cancel-main .wcc_error{
     font-size: 16px;

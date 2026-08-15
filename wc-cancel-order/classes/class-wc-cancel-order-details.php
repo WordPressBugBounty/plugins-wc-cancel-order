@@ -20,7 +20,7 @@ if(!class_exists('WC_Cancel_Order_Details',false)){
 		function guest_cancel_link($order){
 			$actions = WC_Cancel_Order_Init()->get_cancel_action($order);
 			if(is_array($actions) && !empty($actions)){
-				echo '<p><h4>'.__('Want to cancel this order?','wc-cancel-order').'</h4></p>';
+				echo '<p><h4>'.esc_html__('Want to cancel this order?','wc-cancel-order').'</h4></p>';
 				echo '<p>';
 				WC_Cancel_Order_Init()->add_cancel_btn($actions);
 				echo '</p>';
@@ -30,12 +30,14 @@ if(!class_exists('WC_Cancel_Order_Details',false)){
 		function get_order_id($key){
 			if(OrderUtil::custom_orders_table_usage_is_enabled()){
 				global $wpdb;
-				$id = $wpdb->get_var("SELECT m.order_id as order_id FROM ".$wpdb->prefix."wc_orders_meta as m,".$wpdb->prefix."wc_orders as p WHERE p.id=m.order_id AND m.meta_key='_wc_cancel_key' AND m.meta_value='".$key."'");
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$id = $wpdb->get_var($wpdb->prepare("SELECT m.order_id as order_id FROM ".$wpdb->prefix."wc_orders_meta as m,".$wpdb->prefix."wc_orders as p WHERE p.id=m.order_id AND m.meta_key='_wc_cancel_key' AND m.meta_value=%s", $key));
 			}
 			else
 			{
 				global $wpdb;
-				$id = $wpdb->get_var("SELECT m.post_id as order_id FROM ".$wpdb->postmeta." as m,".$wpdb->posts." as p WHERE p.ID=m.post_id AND m.meta_key='_wc_cancel_key' AND m.meta_value='".$key."' AND p.post_type='shop_order'");
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$id = $wpdb->get_var($wpdb->prepare("SELECT m.post_id as order_id FROM ".$wpdb->postmeta." as m,".$wpdb->posts." as p WHERE p.ID=m.post_id AND m.meta_key='_wc_cancel_key' AND m.meta_value=%s AND p.post_type='shop_order'", $key));
 			}
 			return $id;
 		}
@@ -58,7 +60,7 @@ if(!class_exists('WC_Cancel_Order_Details',false)){
 				}
 				else
 				{
-					echo '<div class="woocommerce-error">'.esc_html__('Invalid order.','woocommerce').'<a href="'.esc_url(wc_get_page_permalink('myaccount')).'" class="wc-forward">'.esc_html__('My account','wc-cancel-order').'</a></div>';
+					echo '<div class="woocommerce-error">'.esc_html__('Invalid order.','wc-cancel-order').'<a href="'.esc_url(wc_get_page_permalink('myaccount')).'" class="wc-forward">'.esc_html__('My account','wc-cancel-order').'</a></div>';
 				}
 
 			}

@@ -100,6 +100,7 @@ if(!class_exists('Wc_Cancel_Request_Received')):
 				'recipient'          => array(
 					'title'       => __('Recipient(s)','wc-cancel-order'),
 					'type'        => 'text',
+					/* translators: %s: admin email address */
 					'description' => sprintf(__('Enter recipients (comma separated) for this email. Defaults to %s.','wc-cancel-order'), '<code>' . esc_attr( get_option( 'admin_email' ) ) . '</code>' ),
 					'placeholder' => '',
 					'default'     => '',
