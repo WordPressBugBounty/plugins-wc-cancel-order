@@ -10,7 +10,7 @@ Tested up to: 7.0
 Requires PHP: 8.0
 WC requires at least: 8.0
 WC tested up to: 11.0
-Stable tag: 3.6
+Stable tag: 3.6.1
 
 Let customers request order cancellations from the My Account page, with admin approval and email notifications.
 
@@ -89,6 +89,10 @@ You can write us directly for premium version help or [Contact us](https://wooex
 9. Wc Cancel Order Emails
 
 == Changelog ==
+
+= 3.6.1 - 10/09/2026 =
+* Perf - Index added on db columns.
+* Perf - Front-end cancel assets (scripts, styles and translations) are now only registered and localized on pages that actually use the cancel flow instead of on every page load.
 
 = 3.6 - 15/08/2026 =
 * Fix - Cancellation request dates now display in the site's configured timezone (timestamps stored as GMT and rendered via WordPress date functions).

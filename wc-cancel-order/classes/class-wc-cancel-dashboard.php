@@ -24,7 +24,7 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 				FROM ".$wpdb->prefix."wc_orders as s
 				LEFT JOIN ".$wpdb->prefix."wc_cancel_orders as w ON w.order_id = s.id
 				WHERE s.type=%s AND (s.status='wc-cancel-request' OR w.order_id IS NOT NULL)
-				ORDER BY COALESCE(w.id, s.id) DESC LIMIT %d,%d",
+				ORDER BY w.id DESC, s.id DESC LIMIT %d,%d",
 				'shop_order',$offset,$per_page
 			),ARRAY_A);
 		}
@@ -36,7 +36,7 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 				FROM ".$wpdb->posts." as s
 				LEFT JOIN ".$wpdb->prefix."wc_cancel_orders as w ON w.order_id = s.ID
 				WHERE s.post_type=%s AND (s.post_status='wc-cancel-request' OR w.order_id IS NOT NULL)
-				ORDER BY COALESCE(w.id, s.ID) DESC LIMIT %d,%d",
+				ORDER BY w.id DESC, s.ID DESC LIMIT %d,%d",
 				'shop_order',$offset,$per_page
 			),ARRAY_A);
 		}

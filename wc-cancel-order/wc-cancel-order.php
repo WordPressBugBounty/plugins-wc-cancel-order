@@ -4,7 +4,7 @@
  * Plugin URI: https://wpexpertshub.com
  * Description: Let customers request order cancellations from the My Account page, with admin approval and email notifications.
  * Author: WpExperts Hub
- * Version: 3.6
+ * Version: 3.6.1
  * Author URI: https://wpexpertshub.com
  * Text Domain: wc-cancel-order
  * Domain Path: /languages
@@ -22,6 +22,7 @@ defined( 'ABSPATH' ) || exit;
 class WC_Cancel_Order{
 
 	protected $settings = array();
+	protected $declined_cache = array();
 	protected static $_instance = null;
 
 	public static function instance(){
@@ -37,7 +38,7 @@ class WC_Cancel_Order{
 			@define('WC_CANCEL_DIR',__DIR__);
 		}
         if(!defined('WC_CANCEL_VERSION')){
-            define('WC_CANCEL_VERSION','3.6');
+            define('WC_CANCEL_VERSION','3.6.1');
         }
         if(!defined('WC_CANCEL_SC_FOOTER')){
             @define('WC_CANCEL_SC_FOOTER',true);
@@ -57,7 +58,7 @@ class WC_Cancel_Order{
 
 		add_filter('woocommerce_my_account_my_orders_actions',array($this,'add_cancel_button'),100,2);
 
-		add_action('wp_enqueue_scripts',array($this,'wc_cancel_front_scripts'),10);
+		add_action('admin_init',array($this,'maybe_upgrade_schema'));
 		add_action('wp_enqueue_scripts',array($this,'enqueue_scripts'),20);
 
 		add_action('wp_ajax_wc_cancel_request',array($this,'wc_cancel_request'));
@@ -267,28 +268,6 @@ class WC_Cancel_Order{
 		}
 	}
 
-	function wc_cancel_front_scripts(){
-
-		wp_register_script('wcc-modal',$this->plugin_url().'/assets/js/wcc-modal.js',array(),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
-		wp_register_style('wc-cancel-modal',$this->plugin_url().'/assets/css/modal.css',array(),WC_CANCEL_VERSION);
-		wp_register_style('wc-cancel-style',$this->plugin_url().'/assets/css/front.css',array(),WC_CANCEL_VERSION);
-
-		wp_register_script('wc-cancel-script',$this->plugin_url().'/assets/js/front.js',array('jquery','wcc-modal'),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
-		$translation_array = array(
-			'wcc_text_required'=> $this->settings['text-required'] && $this->settings['text-required']=='1' ? true : false,
-				'wcc_note'         => $this->settings['confirm-note'],
-			'wcc_head_text'    => __('Request Order Cancellation','wc-cancel-order'),
-			'wcc_order_text'   => __('Order #','wc-cancel-order'),
-			'wcc_additional'   => __('Cancellation details','wc-cancel-order'),
-			'wcc_confirm'      => __('Confirm Cancellation','wc-cancel-order'),
-			'wcc_close'        => __('Close','wc-cancel-order'),
-			'wcc_txt_error'    => __('Cancellation details required!','wc-cancel-order'),
-			'wcc_ajax'         => admin_url( 'admin-ajax.php' ),
-			'wcc_nonce'        => wp_create_nonce('wc-cancel-request'),
-		);
-		wp_localize_script('wc-cancel-script','wc_cancel',$translation_array);
-	}
-
 	function enqueue_scripts(){
 		global $post;
 		$init = false;
@@ -306,6 +285,23 @@ class WC_Cancel_Order{
 		}
 		$init = apply_filters('wc_cancel_order_init_script',$init);
 		if($init){
+			wp_register_script('wcc-modal',$this->plugin_url().'/assets/js/wcc-modal.js',array(),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
+			wp_register_style('wc-cancel-modal',$this->plugin_url().'/assets/css/modal.css',array(),WC_CANCEL_VERSION);
+			wp_register_style('wc-cancel-style',$this->plugin_url().'/assets/css/front.css',array(),WC_CANCEL_VERSION);
+			wp_register_script('wc-cancel-script',$this->plugin_url().'/assets/js/front.js',array('jquery','wcc-modal'),WC_CANCEL_VERSION,WC_CANCEL_SC_FOOTER);
+			$translation_array = array(
+				'wcc_text_required'=> $this->settings['text-required'] && $this->settings['text-required']=='1' ? true : false,
+				'wcc_note'         => $this->settings['confirm-note'],
+				'wcc_head_text'    => __('Request Order Cancellation','wc-cancel-order'),
+				'wcc_order_text'   => __('Order #','wc-cancel-order'),
+				'wcc_additional'   => __('Cancellation details','wc-cancel-order'),
+				'wcc_confirm'      => __('Confirm Cancellation','wc-cancel-order'),
+				'wcc_close'        => __('Close','wc-cancel-order'),
+				'wcc_txt_error'    => __('Cancellation details required!','wc-cancel-order'),
+				'wcc_ajax'         => admin_url( 'admin-ajax.php' ),
+				'wcc_nonce'        => wp_create_nonce('wc-cancel-request'),
+			);
+			wp_localize_script('wc-cancel-script','wc_cancel',$translation_array);
 			wp_enqueue_script('wcc-modal');
 			wp_enqueue_style('wc-cancel-modal');
 			wp_enqueue_style('wc-cancel-style');
@@ -313,12 +309,27 @@ class WC_Cancel_Order{
 		}
 	}
 
+	function maybe_upgrade_schema(){
+		// Once-per-version schema self-heal: creates the plugin table and adds the
+		// indexes on the ever-growing wc_cancel_orders table so cancellation lookups
+		// avoid full-table scans (the root cause of long-running cancel/refund flows).
+		if(get_option('wc_cancel_db_version') !== WC_CANCEL_VERSION){
+			$sql = new Wc_Cancel_Sql();
+			$sql->create();
+			update_option('wc_cancel_db_version',WC_CANCEL_VERSION,false);
+		}
+	}
+
 	function is_declined_in_past($order){
 		$bol = true;
 		if(is_a($order,'WC_Order')){
-			global $wpdb;
-			$id = $order->get_id();
-			$bol = $wpdb->get_var($wpdb->prepare("SELECT is_approved FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=%d", $id)); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$id = (int)$order->get_id();
+			if(!isset($this->declined_cache[$id])){
+				global $wpdb;
+				$value = $wpdb->get_var($wpdb->prepare("SELECT is_approved FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=%d", $id)); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$this->declined_cache[$id] = is_null($value) ? 0 : $value;
+			}
+			$bol = $this->declined_cache[$id];
 		}
 		return $bol;
 	}
@@ -347,6 +358,7 @@ class WC_Cancel_Order{
 				array('%d')
 			);
 		}
+		unset($this->declined_cache[$id]);
 	}
 
 	function wc_cancel_setting_view($value){
@@ -530,6 +542,10 @@ class WC_Cancel_Order{
 	}
 
 	function trigger_emails($order_id,$status_from,$status_to,$order){
+		// Skip all per-status work unless this transition involves the cancellation-request status.
+		if($status_from !== 'wc-cancel-request' && $status_to !== 'wc-cancel-request'){
+			return;
+		}
 
 		$from_key = $this->get_status_key($status_from);
 		$to_key = $this->get_status_key($status_to);
