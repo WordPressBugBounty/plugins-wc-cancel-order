@@ -32,7 +32,7 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 		{
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$requests = $wpdb->get_results($wpdb->prepare(
-				"SELECT s.ID as order_id, COALESCE(w.id,0) as id, COALESCE(w.user_id,0) as user_id, COALESCE(w.is_approved,0) as is_approved, COALESCE(w.cancel_request_date, s.post_date) as cancel_request_date
+				"SELECT s.ID as order_id, COALESCE(w.id,0) as id, COALESCE(w.user_id,0) as user_id, COALESCE(w.is_approved,0) as is_approved, COALESCE(w.cancel_request_date, s.post_date_gmt) as cancel_request_date
 				FROM ".$wpdb->posts." as s
 				LEFT JOIN ".$wpdb->prefix."wc_cancel_orders as w ON w.order_id = s.ID
 				WHERE s.post_type=%s AND (s.post_status='wc-cancel-request' OR w.order_id IS NOT NULL)
@@ -100,7 +100,7 @@ class WC_Cancel_Dashboard extends WP_List_Table{
 						$tooltip = wc_sanitize_tooltip( $latest_note->content );
 					} elseif ( isset( $latest_note->content ) ) {
 						/* translators: %d: notes count */
-						$tooltip = wc_sanitize_tooltip( $latest_note->content . '<br/><small style="display:block">' . sprintf( _n( 'Plus %d other note', 'Plus %d other notes', ( $approved_comments_count - 1 ), 'wc-cancel-order'), $approved_comments_count - 1 ) . '</small>' );
+						$tooltip = wc_sanitize_tooltip( $latest_note->content . '<br/><small style="display:block">' . sprintf( _n( 'Plus %d other note', 'Plus %d other notes', $approved_comments_count - 1, 'wc-cancel-order'), $approved_comments_count - 1 ) . '</small>' );
 					} else {
 						/* translators: %d: notes count */
 						$tooltip = wc_sanitize_tooltip( sprintf( _n( '%d note', '%d notes', $approved_comments_count, 'wc-cancel-order'), $approved_comments_count ) );

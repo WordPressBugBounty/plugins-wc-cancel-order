@@ -77,7 +77,7 @@ if(!class_exists('Wc_Cancel_Request_Approved')):
 					'order'              => $this->object,
 					'email_heading'      => $this->get_heading(),
 					'additional_content' => $this->get_additional_content(),
-					'sent_to_admin'      => true,
+					'sent_to_admin'      => false,
 					'plain_text'         => true,
 					'email'              => $this,
 				),

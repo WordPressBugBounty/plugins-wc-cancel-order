@@ -6,11 +6,11 @@ License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=jodhavishalsingh@gmail.com&item_name=Donation For Wc Cancel Order
 Requires at least: 6.7
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.0
 WC requires at least: 8.0
-WC tested up to: 11.0
-Stable tag: 3.6.1
+WC tested up to: 11.1
+Stable tag: 3.6.2
 
 Let customers request order cancellations from the My Account page, with admin approval and email notifications.
 
@@ -89,6 +89,19 @@ You can write us directly for premium version help or [Contact us](https://wooex
 9. Wc Cancel Order Emails
 
 == Changelog ==
+
+= 3.6.2 - 28/09/2026 =
+* Fix - Cancellation emails (request received, approved, declined) were not being sent since 3.6.1.
+* Fix - Declining a cancellation request now restores the order's previous status (e.g. On hold or Pending payment) instead of always setting it to Processing. Requests made before this update still fall back to Processing.
+* Fix - The "Declined" email is now also sent when an admin moves an order out of Cancel Request by hand to any status other than Cancelled, Refunded or Failed.
+* Fix - The cancellation popup no longer reports success when the request could not be processed; it now shows an error instead.
+* Fix - Guests can now cancel from the order-received (thank you) page.
+* Fix - Plain-text Approved/Declined customer emails no longer include admin-only links and SKUs.
+* Fix - The "Want to cancel this order?" link in customer emails is only shown when the order can actually be cancelled, and is proper plain text in plain-text emails.
+* Fix - Removed the duplicate Cancel Request button on the guest cancellation page.
+* Fix - Clearing all "Allow cancellation requests for order statuses" in the settings now saves instead of restoring the defaults.
+* Fix - PHP 8.2+ deprecation notice, request dates on non-HPOS stores, and escaping in the admin request popup.
+* Tweak - Plugin Check: prepared SQL in the database index upgrade; tested up to WordPress 7.1 and WooCommerce 11.1.
 
 = 3.6.1 - 10/09/2026 =
 * Perf - Index added on db columns.
@@ -222,3 +235,8 @@ You can write us directly for premium version help or [Contact us](https://wooex
 
 = 1.0 - 09/11/2014 =
 * Initial Revision.
+
+== Upgrade Notice ==
+
+= 3.6.2 =
+Cancellation emails are working again (they stopped sending in 3.6.1). Declining a request now returns the order to its previous status instead of Processing.

@@ -41,7 +41,7 @@ if(!class_exists('Wc_Cancel_Sql')){
             global $wpdb;
             if($name===''){ $name = $column; }
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-            $rows = $wpdb->get_results( "SHOW INDEX FROM `" . $wpdb->prefix . $table . "`", ARRAY_A );
+            $rows = $wpdb->get_results( $wpdb->prepare( "SHOW INDEX FROM %i", $wpdb->prefix . $table ), ARRAY_A );
             $exists = false;
             foreach($rows as $row){
                 if(isset($row['Key_name']) && $row['Key_name']===$name){
@@ -51,7 +51,7 @@ if(!class_exists('Wc_Cancel_Sql')){
             }
             if(!$exists){
                 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
-                $wpdb->query( "ALTER TABLE `" . $wpdb->prefix . $table . "` ADD INDEX `" . $name . "` (`" . $column . "`)" );
+                $wpdb->query( $wpdb->prepare( "ALTER TABLE %i ADD INDEX %i (%i)", $wpdb->prefix . $table, $name, $column ) );
             }
         }
     }

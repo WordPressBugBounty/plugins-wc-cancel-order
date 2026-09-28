@@ -1,102 +1,119 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR WC Cancel Order
-# This file is distributed under the same license as the WC Cancel Order package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-#, fuzzy
+# Copyright (C) 2026 WpExperts Hub
+# This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: WC Cancel Order 1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-14 22:39+0530\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Project-Id-Version: WC Cancel Order 3.6.2\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wc-cancel-order\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"POT-Creation-Date: 2026-09-28T16:42:26+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: wc-cancel-order\n"
 
-#: classes/class-wc-cancel-order-details.php:23 wc-cancel-order.php:589
-msgid "Want to cancel this order?"
+#. Plugin Name of the plugin
+#: wc-cancel-order.php
+msgid "WC Cancel Order"
 msgstr ""
 
-#: classes/class-wc-cancel-order-details.php:61
-msgid "Invalid order."
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: wc-cancel-order.php
+msgid "https://wpexpertshub.com"
 msgstr ""
 
-#: classes/class-wc-cancel-order-details.php:61
-msgid "My account"
+#. Description of the plugin
+#: wc-cancel-order.php
+msgid "Let customers request order cancellations from the My Account page, with admin approval and email notifications."
 msgstr ""
 
-#: classes/class-wc-cancel-order-details.php:67
-msgid "Sorry, this order is invalid and no details found."
+#. Author of the plugin
+#: wc-cancel-order.php
+msgid "WpExperts Hub"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:99
+#. translators: %d: notes count
+#: classes/class-wc-cancel-dashboard.php:103
 #, php-format
 msgid "Plus %d other note"
 msgid_plural "Plus %d other notes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: classes/class-wc-cancel-dashboard.php:102
+#. translators: %d: notes count
+#: classes/class-wc-cancel-dashboard.php:106
 #, php-format
 msgid "%d note"
 msgid_plural "%d notes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: classes/class-wc-cancel-dashboard.php:168
+#. translators: %s: human-readable time difference
+#: classes/class-wc-cancel-dashboard.php:130
+#, php-format
+msgctxt "%s = human-readable time difference"
+msgid "%s ago"
+msgstr ""
+
+#. translators: 1: first name 2: last name
+#: classes/class-wc-cancel-dashboard.php:152
+#, php-format
+msgctxt "full name"
+msgid "%1$s %2$s"
+msgstr ""
+
+#: classes/class-wc-cancel-dashboard.php:172
 msgid "View Request"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:170
+#: classes/class-wc-cancel-dashboard.php:174
 msgid "Approve Request"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:171
+#: classes/class-wc-cancel-dashboard.php:175
 msgid "Decline Request"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:188
+#: classes/class-wc-cancel-dashboard.php:192
 msgid "Approved"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:191
+#: classes/class-wc-cancel-dashboard.php:195
 msgid "Declined"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:194
+#: classes/class-wc-cancel-dashboard.php:198
 msgid "Pending"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:201
+#: classes/class-wc-cancel-dashboard.php:205
 msgid "Order"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:202
+#: classes/class-wc-cancel-dashboard.php:206
 msgid "Date"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:203
+#: classes/class-wc-cancel-dashboard.php:207
 msgid "Status"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:204
+#: classes/class-wc-cancel-dashboard.php:208
 msgid "Request Status"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:205
+#: classes/class-wc-cancel-dashboard.php:209
 msgid "Total"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:206
+#: classes/class-wc-cancel-dashboard.php:210
 msgid "Actions"
 msgstr ""
 
-#: classes/class-wc-cancel-dashboard.php:235
+#: classes/class-wc-cancel-dashboard.php:239
 msgid "No Cancellation Request Found."
 msgstr ""
 
@@ -104,14 +121,30 @@ msgstr ""
 msgid "Order Details"
 msgstr ""
 
+#: classes/class-wc-cancel-order-details.php:28
+#: wc-cancel-order.php:646
+#: wc-cancel-order.php:650
+msgid "Want to cancel this order?"
+msgstr ""
+
+#: classes/class-wc-cancel-order-details.php:68
+msgid "Invalid order."
+msgstr ""
+
+#: classes/class-wc-cancel-order-details.php:68
+msgid "My account"
+msgstr ""
+
+#: classes/class-wc-cancel-order-details.php:74
+msgid "Sorry, this order is invalid and no details found."
+msgstr ""
+
 #: classes/class-wc-cancel-request-approved.php:14
 msgid "Cancellation Request Approved"
 msgstr ""
 
 #: classes/class-wc-cancel-request-approved.php:15
-msgid ""
-"Order cancellation request approved email is sent to customer when "
-"cancellation request is approved by store manager."
+msgid "Order cancellation request approved email is sent to customer when cancellation request is approved by store manager."
 msgstr ""
 
 #: classes/class-wc-cancel-request-approved.php:29
@@ -127,9 +160,7 @@ msgid "Cancellation Request Declined"
 msgstr ""
 
 #: classes/class-wc-cancel-request-declined.php:15
-msgid ""
-"Order cancellation request declined email is sent to customer when "
-"cancellation request is declined by store manager."
+msgid "Order cancellation request declined email is sent to customer when cancellation request is declined by store manager."
 msgstr ""
 
 #: classes/class-wc-cancel-request-declined.php:29
@@ -145,9 +176,7 @@ msgid "Cancellation Request Received"
 msgstr ""
 
 #: classes/class-wc-cancel-request-received.php:14
-msgid ""
-"Order cancellation request emails are sent to chosen recipient(s) when a new "
-"cancellation request is received."
+msgid "Order cancellation request emails are sent to chosen recipient(s) when a new cancellation request is received."
 msgstr ""
 
 #: classes/class-wc-cancel-request-received.php:31
@@ -158,6 +187,7 @@ msgstr ""
 msgid "Order cancellation request received"
 msgstr ""
 
+#. translators: %s: list of placeholders
 #: classes/class-wc-cancel-request-received.php:92
 #, php-format
 msgid "Available placeholders: %s"
@@ -175,24 +205,25 @@ msgstr ""
 msgid "Recipient(s)"
 msgstr ""
 
-#: classes/class-wc-cancel-request-received.php:103
+#. translators: %s: admin email address
+#: classes/class-wc-cancel-request-received.php:104
 #, php-format
 msgid "Enter recipients (comma separated) for this email. Defaults to %s."
 msgstr ""
 
-#: classes/class-wc-cancel-request-received.php:109
+#: classes/class-wc-cancel-request-received.php:110
 msgid "Subject"
 msgstr ""
 
-#: classes/class-wc-cancel-request-received.php:117
+#: classes/class-wc-cancel-request-received.php:118
 msgid "Email heading"
 msgstr ""
 
-#: classes/class-wc-cancel-request-received.php:125
+#: classes/class-wc-cancel-request-received.php:126
 msgid "Email type"
 msgstr ""
 
-#: classes/class-wc-cancel-request-received.php:127
+#: classes/class-wc-cancel-request-received.php:128
 msgid "Choose which format of email to send."
 msgstr ""
 
@@ -200,11 +231,8 @@ msgstr ""
 msgid "Cancellation Request"
 msgstr ""
 
-#: includes/dashboard.php:9
-msgid "Cancellation Requests"
-msgstr ""
-
-#: includes/settings.php:26 wc-cancel-order.php:383
+#: includes/settings.php:26
+#: wc-cancel-order.php:394
 msgid "WC Cancel"
 msgstr ""
 
@@ -213,9 +241,16 @@ msgid "WC Cancel Order Settings"
 msgstr ""
 
 #: includes/settings.php:66
-msgid ""
-"Control when and how customers can request order cancellations from their "
-"account and order emails."
+msgid "Control when and how customers can request order cancellations from their account and order emails."
+msgstr ""
+
+#: includes/wc-cancel-options.php:7
+msgid "Rate Wc Cancel Order"
+msgstr ""
+
+#: includes/wc-cancel-options.php:8
+#: wc-cancel-order.php:100
+msgid "Get Pro Version"
 msgstr ""
 
 #: includes/wc-cancel-options.php:11
@@ -223,10 +258,7 @@ msgid "Allow cancellation requests for order statuses"
 msgstr ""
 
 #: includes/wc-cancel-options.php:24
-msgid ""
-"Customers can request cancellation for orders in the selected statuses. The "
-"request requires admin approval before the order is cancelled. Hold Ctrl/Cmd "
-"to select multiple."
+msgid "Customers can request cancellation for orders in the selected statuses. The request requires admin approval before the order is cancelled. Hold Ctrl/Cmd to select multiple."
 msgstr ""
 
 #: includes/wc-cancel-options.php:27
@@ -234,8 +266,7 @@ msgid "Require cancellation details"
 msgstr ""
 
 #: includes/wc-cancel-options.php:30
-msgid ""
-"Customers must provide cancellation details before submitting a request."
+msgid "Customers must provide cancellation details before submitting a request."
 msgstr ""
 
 #: includes/wc-cancel-options.php:34
@@ -243,9 +274,7 @@ msgid "Note shown in the cancel popup"
 msgstr ""
 
 #: includes/wc-cancel-options.php:38
-msgid ""
-"This text is displayed to the customer inside the cancellation request "
-"popup. HTML tags are allowed."
+msgid "This text is displayed to the customer inside the cancellation request popup. HTML tags are allowed."
 msgstr ""
 
 #: includes/wc-cancel-options.php:41
@@ -253,128 +282,134 @@ msgid "Allow guest cancellation"
 msgstr ""
 
 #: includes/wc-cancel-options.php:44
-msgid ""
-"Allow guest (non-registered) customers to cancel their order using the link "
-"sent in their order email."
+msgid "Allow guest (non-registered) customers to cancel their order using the link sent in their order email."
 msgstr ""
 
+#. translators: %s: Customer billing full name
+#: templates/emails/admin-request-received.php:16
 #: templates/emails/plain/admin-request-received.php:14
-#: templates/emails/admin-request-received.php:15
 #, php-format
 msgid "Order (#%s) cancellation request received for following order:"
 msgstr ""
 
+#. translators: %s: Customer billing full name
+#: templates/emails/customer-request-approved.php:16
 #: templates/emails/plain/customer-request-approved.php:14
-#: templates/emails/customer-request-approved.php:15
 #, php-format
-msgid ""
-"Your order (#%s) cancellation request is approved and order has been marked "
-"as cancelled."
+msgid "Your order (#%s) cancellation request is approved and order has been marked as cancelled."
 msgstr ""
 
+#. translators: %s: Customer billing full name
+#: templates/emails/customer-request-declined.php:16
 #: templates/emails/plain/customer-request-declined.php:14
-#: templates/emails/customer-request-declined.php:15
 #, php-format
-msgid ""
-"Your order (#%s) cancellation request is declined, The order details are "
-"shown below for your reference:"
+msgid "Your order (#%s) cancellation request is declined, The order details are shown below for your reference:"
 msgstr ""
 
-#: wc-cancel-order.php:96
+#: wc-cancel-order.php:99
 msgid "Settings"
 msgstr ""
 
-#: wc-cancel-order.php:97
-msgid "Get Pro Version"
-msgstr ""
-
-#: wc-cancel-order.php:210 wc-cancel-order.php:367 wc-cancel-order.php:378
+#: wc-cancel-order.php:216
+#: wc-cancel-order.php:377
+#: wc-cancel-order.php:389
 msgid "Cancel Request"
 msgstr ""
 
-#: wc-cancel-order.php:248
+#: wc-cancel-order.php:254
 msgid "Cancellation Request Detail"
 msgstr ""
 
-#: wc-cancel-order.php:249
+#: wc-cancel-order.php:255
 msgid "Approve Cancellation Request ?"
 msgstr ""
 
-#: wc-cancel-order.php:250
+#: wc-cancel-order.php:256
 msgid "Decline Cancellation Request ?"
 msgstr ""
 
-#: wc-cancel-order.php:251 wc-cancel-order.php:277
+#: wc-cancel-order.php:257
+#: wc-cancel-order.php:297
 msgid "Order #"
 msgstr ""
 
-#: wc-cancel-order.php:252
+#: wc-cancel-order.php:258
 msgid "Confirm"
 msgstr ""
 
-#: wc-cancel-order.php:253 wc-cancel-order.php:280
+#: wc-cancel-order.php:259
+#: wc-cancel-order.php:300
 msgid "Close"
 msgstr ""
 
-#: wc-cancel-order.php:276
+#: wc-cancel-order.php:296
 msgid "Request Order Cancellation"
 msgstr ""
 
-#: wc-cancel-order.php:278
+#: wc-cancel-order.php:298
 msgid "Cancellation details"
 msgstr ""
 
-#: wc-cancel-order.php:279
+#: wc-cancel-order.php:299
 msgid "Confirm Cancellation"
 msgstr ""
 
-#: wc-cancel-order.php:281
+#: wc-cancel-order.php:301
 msgid "Cancellation details required!"
 msgstr ""
 
-#: wc-cancel-order.php:372
+#: wc-cancel-order.php:302
+#: wc-cancel-order.php:457
+msgid "Cancellation request could not be processed. Please try again."
+msgstr ""
+
+#. translators: %s: number of cancellation requests
+#: wc-cancel-order.php:383
 #, php-format
 msgid "Cancel Request <span class=\"count\">(%s)</span>"
 msgid_plural "Cancel Request <span class=\"count\">(%s)</span>"
 msgstr[0] ""
 msgstr[1] ""
 
-#: wc-cancel-order.php:425
+#: wc-cancel-order.php:442
 msgid "Order Status updated by Wc Cancel Order."
 msgstr ""
 
-#: wc-cancel-order.php:434
+#: wc-cancel-order.php:453
 msgid "Cancellation request sent successfully."
 msgstr ""
 
-#: wc-cancel-order.php:465
+#: wc-cancel-order.php:489
 msgid "Cancellation details :"
 msgstr ""
 
-#: wc-cancel-order.php:466
+#: wc-cancel-order.php:490
 msgid "Request Date:"
 msgstr ""
 
-#: wc-cancel-order.php:471
+#: wc-cancel-order.php:495
 msgid "Approved Date:"
 msgstr ""
 
-#: wc-cancel-order.php:477
+#: wc-cancel-order.php:501
 msgid "Declined Date:"
 msgstr ""
 
-#: wc-cancel-order.php:485 wc-cancel-order.php:486
+#: wc-cancel-order.php:509
+#: wc-cancel-order.php:510
 msgid "Cancellation Request Approved."
 msgstr ""
 
-#: wc-cancel-order.php:495 wc-cancel-order.php:496
+#: wc-cancel-order.php:519
+#: wc-cancel-order.php:520
 msgid "Cancellation Request Declined."
 msgstr ""
 
-#: wc-cancel-order.php:527 wc-cancel-order.php:530
+#: wc-cancel-order.php:551
+#: wc-cancel-order.php:554
 msgid "Cancellation Details:"
 msgstr ""
 
-#: wc-cancel-order.php:591
+#: wc-cancel-order.php:651
 msgid "Cancel Order"
 msgstr ""

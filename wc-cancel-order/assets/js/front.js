@@ -109,16 +109,21 @@ jQuery(function($){
 						},
 						success: function(data){
 							if(api){ api.setLoading(false); }
-							if(data.res){
-								if(data.hasOwnProperty("fragments")){
-									$.each(data.fragments, function(key,value){
-										$(key).replaceWith(value);
-									});
-								}
+							if(data.hasOwnProperty("fragments")){
+								$.each(data.fragments, function(key,value){
+									$(key).replaceWith(value);
+								});
 							}
-							setTimeout(function(){
-								window.location.reload();
-							},1500);
+							// Keep the popup open with the error so the customer is not told it worked.
+							if(data.res){
+								setTimeout(function(){
+									window.location.reload();
+								},1500);
+							}
+						},
+						error: function(){
+							if(api){ api.setLoading(false); }
+							$(document).find('.wc-cancel-notice').html('<span class="wcc_error">'+wc_cancel.wcc_req_error+'</span>');
 						}
 					});
 				}

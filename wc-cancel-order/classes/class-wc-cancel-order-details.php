@@ -8,6 +8,7 @@ use Automattic\WooCommerce\Utilities\OrderUtil;
 if(!class_exists('WC_Cancel_Order_Details',false)){
 	class WC_Cancel_Order_Details{
 
+		public $key ='';
 		public $slug ='';
 		public $settings ='';
 
@@ -18,6 +19,10 @@ if(!class_exists('WC_Cancel_Order_Details',false)){
 		}
 
 		function guest_cancel_link($order){
+			// Recent WooCommerce order-details templates already render the account order actions (incl. Cancel Request); avoid a duplicate button.
+			if(did_filter('woocommerce_my_account_my_orders_actions')){
+				return;
+			}
 			$actions = WC_Cancel_Order_Init()->get_cancel_action($order);
 			if(is_array($actions) && !empty($actions)){
 				echo '<p><h4>'.esc_html__('Want to cancel this order?','wc-cancel-order').'</h4></p>';

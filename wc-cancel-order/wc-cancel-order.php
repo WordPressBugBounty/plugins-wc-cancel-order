@@ -4,17 +4,17 @@
  * Plugin URI: https://wpexpertshub.com
  * Description: Let customers request order cancellations from the My Account page, with admin approval and email notifications.
  * Author: WpExperts Hub
- * Version: 3.6.1
+ * Version: 3.6.2
  * Author URI: https://wpexpertshub.com
  * Text Domain: wc-cancel-order
  * Domain Path: /languages
  * License: GPLv3
  * Requires Plugins: woocommerce
  * Requires at least: 6.7
- * Tested up to: 7.0
+ * Tested up to: 7.1
  * Requires PHP: 8.0
  * WC requires at least: 8.0
- * WC tested up to: 11.0
+ * WC tested up to: 11.1
  **/
 
 defined( 'ABSPATH' ) || exit;
@@ -38,7 +38,7 @@ class WC_Cancel_Order{
 			@define('WC_CANCEL_DIR',__DIR__);
 		}
         if(!defined('WC_CANCEL_VERSION')){
-            define('WC_CANCEL_VERSION','3.6.1');
+            define('WC_CANCEL_VERSION','3.6.2');
         }
         if(!defined('WC_CANCEL_SC_FOOTER')){
             @define('WC_CANCEL_SC_FOOTER',true);
@@ -70,11 +70,12 @@ class WC_Cancel_Order{
 		add_action('admin_menu',array($this,'admin_menu'));
 		add_filter('woocommerce_email_classes',array($this,'wc_cancel_email_classes'),999,1);
 		add_action('woocommerce_email_wc_cancel_reason',array($this,'add_cancellation_reason'),10,4);
+		add_action('woocommerce_order_status_changed',array($this,'remember_prev_status'),10,4);
 		add_action('woocommerce_order_status_changed',array($this,'trigger_emails'),999,4);
 		add_action('woocommerce_checkout_update_order_meta',array($this,'wc_cancel_key'),1,2);
 		add_action('woocommerce_store_api_checkout_order_processed',array($this,'wc_cancel_key_save'),1,1);
 
-		add_filter('the_posts',array($this,'guest_cancel_page'));
+		add_filter('the_posts',array($this,'guest_cancel_page'),10,2);
 		add_shortcode('wc_cancel_order_details',array($this,'wc_cancel_order_details'));
 		add_action('woocommerce_email_customer_details',array( $this,'add_cancel_link' ),999,3);
 		add_action('before_woocommerce_init',array($this,'hpos_compatibility'));
@@ -121,7 +122,7 @@ class WC_Cancel_Order{
 		}
 		if(isset($_POST['wc-cancel'])){
 			$this->settings = array(
-				'req-status' => isset($_POST['wc-cancel']['req-status']) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['wc-cancel']['req-status'] ) ) : array('wc-pending','wc-processing','wc-on-hold'),
+				'req-status' => isset($_POST['wc-cancel']['req-status']) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['wc-cancel']['req-status'] ) ) : array(),
 				'text-required' => isset($_POST['wc-cancel']['text-required']) ? sanitize_text_field( wp_unslash( $_POST['wc-cancel']['text-required'] ) ) : 0,
 				'confirm-note' => isset($_POST['wc-cancel']['confirm-note']) ? wp_kses_post( wp_unslash( $_POST['wc-cancel']['confirm-note'] ) ) : '',
 				'guest-cancel' => isset($_POST['wc-cancel']['guest-cancel']) ? sanitize_text_field( wp_unslash( $_POST['wc-cancel']['guest-cancel'] ) ) : 0,
@@ -298,6 +299,7 @@ class WC_Cancel_Order{
 				'wcc_confirm'      => __('Confirm Cancellation','wc-cancel-order'),
 				'wcc_close'        => __('Close','wc-cancel-order'),
 				'wcc_txt_error'    => __('Cancellation details required!','wc-cancel-order'),
+				'wcc_req_error'    => __('Cancellation request could not be processed. Please try again.','wc-cancel-order'),
 				'wcc_ajax'         => admin_url( 'admin-ajax.php' ),
 				'wcc_nonce'        => wp_create_nonce('wc-cancel-request'),
 			);
@@ -411,6 +413,7 @@ class WC_Cancel_Order{
 	}
 
 	function wc_cancel_request(){
+		$success = false;
 		$order_id = isset($_REQUEST['order_id']) ? absint( wp_unslash( $_REQUEST['order_id'] ) ) : 0;
 		if($order_id){
 			if(isset($_REQUEST['_wpnonce']) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ),'wc-cancel-request')){
@@ -422,17 +425,23 @@ class WC_Cancel_Order{
 					if($order_key!=''){
 						$details = new WC_Cancel_Order_Details($order_key,$this->settings);
 						$order_id_by_key = $details->get_order_id($order_key);
+						// On the order-received page "key" is the WooCommerce order key, not the plugin's cancel key.
+						// sanitize_key() lowercases it, so compare case-insensitively.
+						if(!$order_id_by_key && hash_equals(strtolower($order->get_order_key()),$order_key)){
+							$order_id_by_key = $order_id;
+						}
 					}
 
 					if(!$this->is_declined_in_past($order) && (($this->user_has_role() && $this->check_order_customer($order)) || ($this->user_has_role() && $order_id_by_key==$order_id))){
-						if(isset($_REQUEST['additional_details'])){
-                            $order->update_meta_data('_wc_cancel_additional_txt',sanitize_textarea_field( wp_unslash( $_REQUEST['additional_details'] ) ));
-                            $order->save();
-						}
 						if(is_array($this->settings['req-status']) && in_array($status_key,$this->settings['req-status'])){
+							if(isset($_REQUEST['additional_details'])){
+								$order->update_meta_data('_wc_cancel_additional_txt',sanitize_textarea_field( wp_unslash( $_REQUEST['additional_details'] ) ));
+								$order->save();
+							}
 							$this->add_req($order_id);
 							$order->update_status('cancel-request',__('Order Status updated by Wc Cancel Order.','wc-cancel-order'));
 							do_action('wc_cancel_request',$order_id);
+							$success = true;
 						}
 					}
 				}
@@ -440,8 +449,14 @@ class WC_Cancel_Order{
 		}
 
 		if ( isset( $_REQUEST['wcc_ajax'] ) && sanitize_text_field( wp_unslash( $_REQUEST['wcc_ajax'] ) ) ) {
-            $html='<div class="wc-cancel-notice wxp-col-12"><div class="wcc_sucess">'.__('Cancellation request sent successfully.','wc-cancel-order').'</div></div>';
-			wp_send_json(array('res'=>true,'fragments'=>array('div.wc-cancel-notice'=>$html)));
+			if($success){
+				$html='<div class="wc-cancel-notice wxp-col-12"><div class="wcc_sucess">'.esc_html__('Cancellation request sent successfully.','wc-cancel-order').'</div></div>';
+			}
+			else
+			{
+				$html='<div class="wc-cancel-notice wxp-col-12"><div class="wcc_error">'.esc_html__('Cancellation request could not be processed. Please try again.','wc-cancel-order').'</div></div>';
+			}
+			wp_send_json(array('res'=>$success,'fragments'=>array('div.wc-cancel-notice'=>$html)));
 		}
 		else
 		{
@@ -471,19 +486,19 @@ class WC_Cancel_Order{
 					$date = $wpdb->get_var($wpdb->prepare("SELECT cancel_request_date FROM ".$wpdb->prefix."wc_cancel_orders WHERE order_id=%d", $order_id)); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
                     $additional_txt = $order->get_meta('_wc_cancel_additional_txt');
                     $additional_txt = trim($additional_txt)=='' ? '--' : $additional_txt;
-					$html= '<p class="wc-cancel-meta"><label>'.__('Cancellation details :','wc-cancel-order').'</label>'.$additional_txt.'</p>';
-					$html.= '<p class="wc-cancel-meta"><label>'.__('Request Date:','wc-cancel-order').'</label>'.(!empty($date)?get_date_from_gmt($date, $format):'').'</p>';
-					$meta = $order->get_meta('_wc_cancel_request_data');;
+					$html= '<p class="wc-cancel-meta"><label>'.esc_html__('Cancellation details :','wc-cancel-order').'</label>'.nl2br(esc_html($additional_txt)).'</p>';
+					$html.= '<p class="wc-cancel-meta"><label>'.esc_html__('Request Date:','wc-cancel-order').'</label>'.(!empty($date)?esc_html(get_date_from_gmt($date, $format)):'').'</p>';
+					$meta = $order->get_meta('_wc_cancel_request_data');
 					if(isset($meta['approved']) && $meta['approved']){
 						$html.= '<p class="wc-cancel-meta wc-cancel-approved">';
-						$html.= '<span class="wc-cancel-approved-icon">'.$meta['head'].'</span>';
-						$html.= '<span><label>'.__('Approved Date:','wc-cancel-order').'</label>'.(!empty($meta['date'])?get_date_from_gmt($meta['date'], $format):'').'</span>';
+						$html.= '<span class="wc-cancel-approved-icon">'.esc_html($meta['head']).'</span>';
+						$html.= '<span><label>'.esc_html__('Approved Date:','wc-cancel-order').'</label>'.(!empty($meta['date'])?esc_html(get_date_from_gmt($meta['date'], $format)):'').'</span>';
 						$html.= '</p>';
 					}
 					elseif(isset($meta['approved']) && !$meta['approved']){
 						$html.= '<p class="wc-cancel-meta wc-cancel-declined">';
-						$html.= '<span class="wc-cancel-declined-icon">'.$meta['head'].'</span>';
-						$html.= '<span><label>'.__('Declined Date:','wc-cancel-order').'</label>'.(!empty($meta['date'])?get_date_from_gmt($meta['date'], $format):'').'</span>';
+						$html.= '<span class="wc-cancel-declined-icon">'.esc_html($meta['head']).'</span>';
+						$html.= '<span><label>'.esc_html__('Declined Date:','wc-cancel-order').'</label>'.(!empty($meta['date'])?esc_html(get_date_from_gmt($meta['date'], $format)):'').'</span>';
 						$html.= '</p>';
 					}
 					$res = array('reload'=>false,'html'=>$html);
@@ -501,7 +516,7 @@ class WC_Cancel_Order{
 					$order = wc_get_order($order_id);
 					if(is_a($order,'WC_Order') && $order->get_status()=='cancel-request'){
 						$this->add_req($order_id,2);
-						$order->update_status('processing',__('Cancellation Request Declined.','wc-cancel-order'));
+						$order->update_status($this->get_declined_status($order),__('Cancellation Request Declined.','wc-cancel-order'));
                         $order->update_meta_data('_wc_cancel_request_data',array('approved'=>false,'head'=>__('Cancellation Request Declined.','wc-cancel-order'),'date'=>current_time('mysql', true)));
                         $order->save();
                         $res = array('reload'=>true,'html'=>'');
@@ -541,24 +556,39 @@ class WC_Cancel_Order{
 		}
 	}
 
+	function remember_prev_status($order_id,$status_from,$status_to,$order){
+		// Keep the status the order had before "Cancel Request" (customer request or admin change) so a decline can restore it.
+		if($status_to === 'cancel-request' && $status_from !== '' && is_a($order,'WC_Order')){
+			$order->update_meta_data('_wc_cancel_prev_status',$status_from);
+			$order->save();
+		}
+	}
+
+	function get_declined_status($order){
+		// Requests made before 3.6.2 have no stored status, so they fall back to Processing (the old behaviour).
+		$status = $this->get_status((string)$order->get_meta('_wc_cancel_prev_status'));
+		if($status==='' || in_array($status,array('cancel-request','cancelled','refunded','failed'),true) || !array_key_exists('wc-'.$status,wc_get_order_statuses())){
+			$status = 'processing';
+		}
+		return apply_filters('wc_cancel_declined_status',$status,$order);
+	}
+
 	function trigger_emails($order_id,$status_from,$status_to,$order){
 		// Skip all per-status work unless this transition involves the cancellation-request status.
-		if($status_from !== 'wc-cancel-request' && $status_to !== 'wc-cancel-request'){
+		// WooCommerce passes both statuses without the "wc-" prefix.
+		if($status_from !== 'cancel-request' && $status_to !== 'cancel-request'){
 			return;
 		}
 
-		$from_key = $this->get_status_key($status_from);
-		$to_key = $this->get_status_key($status_to);
-		if($to_key=='wc-cancel-request'){
-			$mails = WC()->mailer()->get_emails();
+		$mails = WC()->mailer()->get_emails();
+		if($status_to === 'cancel-request'){
 			$mails['Wc_Cancel_Request_Received']->trigger($order_id);
 		}
-		elseif($from_key=='wc-cancel-request' && $to_key=='wc-cancelled'){
-			$mails = WC()->mailer()->get_emails();
+		elseif($status_to === 'cancelled'){
 			$mails['Wc_Cancel_Request_Approved']->trigger($order_id);
 		}
-		elseif($from_key=='wc-cancel-request' && $to_key=='wc-processing'){
-			$mails = WC()->mailer()->get_emails();
+		elseif(!in_array($status_to,array('refunded','failed'),true)){
+			// Leaving "Cancel Request" for any other status (restored on decline, or changed by hand) means the request was declined.
 			$mails['Wc_Cancel_Request_Declined']->trigger($order_id);
 		}
 	}
@@ -576,10 +606,11 @@ class WC_Cancel_Order{
         $this->wc_cancel_key($order_id,array());
     }
 
-	function guest_cancel_page($posts){
-		global $wp,$wp_query;
+	function guest_cancel_page($posts,$query=null){
+		global $wp;
+		// Only replace the main query; secondary queries on this page (widgets, templates) must stay untouched.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if(isset($wp->request) && $wp->request=='guest-cancel-req'){
+		if(isset($wp->request) && $wp->request=='guest-cancel-req' && is_a($query,'WP_Query') && $query->is_main_query()){
 			$args = array(
 				'slug' => 'guest-cancel-req',
 				'post_title' => 'Order Details',
@@ -601,10 +632,23 @@ class WC_Cancel_Order{
 	}
 
 	function add_cancel_link($order,$sent_to_admin=false,$plain_text=false){
-		if(is_a($order,'WC_Order') && !$sent_to_admin && isset($this->settings['guest-cancel']) && $this->settings['guest-cancel'] && !$this->is_declined_in_past($order) && $order->get_status()!='completed'){
-			echo '<p><h4>'.esc_html__('Want to cancel this order?','wc-cancel-order').'</h4></p>';
-            $key = $order->get_meta('_wc_cancel_key');
-			echo '<p><a href="'.esc_url( get_home_url( get_current_blog_id(), '/guest-cancel-req/?key='.$key ) ).'">'.esc_html__('Cancel Order','wc-cancel-order').'</a></p>';
+		if(!is_a($order,'WC_Order') || $sent_to_admin || empty($this->settings['guest-cancel'])){
+			return;
+		}
+		// Only offer the link while the order can actually be cancelled (status allowed, no earlier request) and has a guest key.
+		$key = $order->get_meta('_wc_cancel_key');
+		$actions = $this->get_cancel_action($order);
+		if($key=='' || !isset($actions['wc-cancel-order'])){
+			return;
+		}
+		$url = get_home_url( get_current_blog_id(), '/guest-cancel-req/?key='.$key );
+		if($plain_text){
+			echo "\n".esc_html__('Want to cancel this order?','wc-cancel-order')."\n".esc_url($url)."\n\n";
+		}
+		else
+		{
+			echo '<h4>'.esc_html__('Want to cancel this order?','wc-cancel-order').'</h4>';
+			echo '<p><a href="'.esc_url($url).'">'.esc_html__('Cancel Order','wc-cancel-order').'</a></p>';
 		}
 	}
 }
